@@ -9,7 +9,7 @@ export const HelmRepository = z.object({
 export type HelmRepository = z.infer<typeof HelmRepository>;
 
 export const HelmRelease = z.object({
-  name: z.string(),
+  name: z.string().optional(),
   chart: z.string(),
   version: z
     .string()
