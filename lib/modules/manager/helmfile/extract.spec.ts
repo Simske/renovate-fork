@@ -363,6 +363,59 @@ describe('modules/manager/helmfile/extract', () => {
       });
     });
 
+    it('parses a helmfile with inherit and without name for release', async () => {
+      const content = `
+      repositories:
+        - name: oci-repo
+          url: ghcr.io/example/oci-repo
+          oci: true
+        - name: jenkins
+          url: https://charts.jenkins.io
+
+      releases:
+        - inherit:
+            - template: example1
+          version: 0.1.0
+          chart: oci-repo/example
+        - name: jenkins
+          inherit: 
+            - template: jenkins
+          chart: jenkins/jenkins
+          version: 3.3.0
+        - name: oci-url
+          version: 0.4.2
+          chart: oci://ghcr.io/example/oci-repo/url-example
+      `;
+      const fileName = 'helmfile.yaml';
+      const result = await extractPackageFile(content, fileName, {
+        registryAliases: {
+          stable: 'https://charts.helm.sh/stable',
+        },
+      });
+      expect(result).toMatchObject({
+        datasource: 'helm',
+        deps: [
+          {
+            currentValue: '0.1.0',
+            depName: 'exampl',
+            datasource: 'docker',
+            packageName: 'ghcr.io/example/oci-repo/example',
+          },
+          {
+            currentValue: '3.3.0',
+            depName: 'jenkins',
+            registryUrls: ['https://charts.jenkins.io'],
+          },
+          {
+            currentValue: '0.4.2',
+            depName: 'url-example',
+            datasource: 'docker',
+            packageName: 'ghcr.io/example/oci-repo/url-example',
+          },
+        ],
+      });
+    });
+
     it('allows OCI chart names containing forward slashes', async () => {
       const content = `
       repositories:
